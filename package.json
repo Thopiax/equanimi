@@ -1,0 +1,13 @@
+{
+  "name": "equanimi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:browser": "pnpm --filter @equanimi/browser dev",
+    "dev:desktop": "pnpm --filter @equanimi/desktop dev",
+    "build:browser": "pnpm --filter @equanimi/browser build",
+    "build:desktop": "pnpm --filter @equanimi/desktop build",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@equanimi/browser",
+  "description": "Stopping cues for the internet. A modular attention intervention platform.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt --browser firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build --browser firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip --browser firefox",
+    "postinstall": "wxt prepare",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@equanimi/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "wxt": "^0.19.0"
+  }
+}

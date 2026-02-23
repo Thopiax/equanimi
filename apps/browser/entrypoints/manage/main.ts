@@ -60,6 +60,12 @@ const watchTimePositionStore = signalSetting<WatchTimePosition>(
   "bottom-right"
 );
 
+const stainEnabledStore = signalSetting<boolean>(
+  "youtube-watch-time",
+  "stain-enabled",
+  true
+);
+
 const tunnelMinStore = signalSetting<number>(
   "youtube-watch-time",
   "tunnel-min-minutes",
@@ -294,6 +300,28 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
         settingsPanel.classList.toggle("hidden", !toggle.input.checked);
       });
       store.watch((v) => settingsPanel.classList.toggle("hidden", !v));
+
+      // ── Stain toggle ──────────────────────────────────────────
+      const stainRow = document.createElement("div");
+      stainRow.className = "settings-row";
+
+      const stainLabel = document.createElement("span");
+      stainLabel.className = "settings-label";
+      stainLabel.textContent = "Dark stain overlay";
+
+      const stainToggle = createToggle("stain-enabled");
+      const currentStainEnabled = await stainEnabledStore.getValue();
+      stainToggle.input.checked = currentStainEnabled;
+      stainToggle.input.addEventListener("change", async () => {
+        await stainEnabledStore.setValue(stainToggle.input.checked);
+      });
+      stainEnabledStore.watch((v) => {
+        stainToggle.input.checked = v;
+      });
+
+      stainRow.appendChild(stainLabel);
+      stainRow.appendChild(stainToggle.label);
+      settingsPanel.appendChild(stainRow);
 
       // ── Position picker ───────────────────────────────────────
       const posRow = document.createElement("div");

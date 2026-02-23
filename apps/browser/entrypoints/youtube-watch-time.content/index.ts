@@ -12,8 +12,13 @@ import "./style.css";
  * - Uses MutationObserver to track videos across YouTube's SPA navigation.
  * - Resets at the start of each calendar day.
  * - Shows a timer counter (configurable corner position).
- * - Applies a growing dark blob over the video that starts small and
- *   expands to cover ~55% of the player. Position is random per page load.
+ * - Optionally applies a growing dark blob ("stain") over the video that
+ *   starts small and expands to cover ~55% of the player. Position is
+ *   random per page load. The stain can be toggled independently.
+ *
+ * Cross-tab safety: each tab tracks only its own unsaved delta and does
+ * a read-modify-write on save, so multiple YouTube tabs accumulate
+ * correctly into a single shared total.
  *
  * The blob never fully covers the player. Compass, not cage.
  */
@@ -46,6 +51,13 @@ const dailyDateStore = signalSetting<string>(
   youtubeWatchTime.id,
   "daily-date",
   ""
+);
+
+// ── Stain toggle (independent of watch-time counter) ─────────────
+export const stainEnabledStore = signalSetting<boolean>(
+  youtubeWatchTime.id,
+  "stain-enabled",
+  true // on by default when signal is active
 );
 
 // ── Configurable tunnel time range ───────────────────────────────
@@ -83,8 +95,8 @@ function deriveTau(minMin: number, maxMin: number): void {
 // Blob: a dark circle that grows over the video
 const BLOB_SIZE_MIN = 3; // % of player width at t≈0 (tiny dot)
 const BLOB_SIZE_MAX = 55; // % of player width at t→∞ (covers most of player)
-const BLOB_ALPHA_MIN = 0.5; // core opacity at t≈0
-const BLOB_ALPHA_MAX = 0.92; // core opacity at t→∞
+const BLOB_ALPHA_MIN = 0.65; // core opacity at t≈0
+const BLOB_ALPHA_MAX = 0.96; // core opacity at t→∞
 
 // Random blob position (picked once per page load)
 let blobX = 50;
@@ -125,7 +137,9 @@ export default defineContentScript({
 
 let active = false;
 let dailySeconds = 0;
+let unsavedDelta = 0; // seconds accumulated locally since last storage sync
 let videoPlaying = false;
+let stainEnabled = true;
 let tickInterval: ReturnType<typeof setInterval> | null = null;
 let counterEl: HTMLElement | null = null;
 let stainEl: HTMLElement | null = null;
@@ -153,6 +167,13 @@ async function activate(): Promise<void> {
     updateDisplay();
   });
 
+  // Load stain toggle state and watch for changes.
+  stainEnabled = await stainEnabledStore.getValue();
+  stainEnabledStore.watch((v) => {
+    stainEnabled = v;
+    updateDisplay();
+  });
+
   // Load persisted daily total (reset if new calendar day).
   const today = todayDateString();
   const storedDate = await dailyDateStore.getValue();
@@ -164,6 +185,19 @@ async function activate(): Promise<void> {
     await dailyDateStore.setValue(today);
     await dailySecondsStore.setValue(0);
   }
+  unsavedDelta = 0;
+
+  // Listen for storage changes from other tabs so our local total
+  // stays in sync with the shared accumulator.
+  dailySecondsStore.watch((storedValue) => {
+    // Only adopt the stored value if it's ahead of our local view
+    // (i.e. another tab saved seconds we don't have yet).
+    // If we just saved ourselves, storedValue == dailySeconds already.
+    if (storedValue > dailySeconds) {
+      dailySeconds = storedValue;
+      updateDisplay();
+    }
+  });
 
   document.documentElement.classList.add(CSS_CLASS);
   await createOverlay();
@@ -180,7 +214,7 @@ function deactivate(): void {
   if (!active) return;
   active = false;
 
-  dailySecondsStore.setValue(dailySeconds);
+  flushDelta();
 
   document.documentElement.classList.remove(CSS_CLASS);
   removeOverlay();
@@ -310,9 +344,13 @@ function tick(): void {
   // Only accumulate when a video is playing on a visible tab.
   if (!document.hidden && videoPlaying) {
     dailySeconds++;
+    unsavedDelta++;
 
-    if (dailySeconds % SAVE_INTERVAL === 0) {
-      dailySecondsStore.setValue(dailySeconds);
+    // Flush local delta to shared storage periodically.
+    // Read-modify-write: add only this tab's new seconds, so
+    // multiple tabs accumulate correctly into one total.
+    if (unsavedDelta >= SAVE_INTERVAL) {
+      flushDelta();
     }
   }
 
@@ -335,8 +373,8 @@ function updateDisplay(): void {
   // ── Continuous interpolation ────────────────────────────────
   const t = stainProgress(dailySeconds);
 
-  if (t <= 0) {
-    // Before min threshold — blob is invisible.
+  if (!stainEnabled || t <= 0) {
+    // Stain disabled or before min threshold — blob is invisible.
     stainEl.style.width = "0";
     stainEl.style.paddingBottom = "0";
     stainEl.style.opacity = "0";
@@ -345,7 +383,7 @@ function updateDisplay(): void {
     const size = lerp(BLOB_SIZE_MIN, BLOB_SIZE_MAX, t);
     const alpha = lerp(BLOB_ALPHA_MIN, BLOB_ALPHA_MAX, t);
     // Soft edge: solid core fades to transparent at the rim
-    const edgeAlpha = alpha * 0.5;
+    const edgeAlpha = alpha * 0.6;
 
     stainEl.style.width = `${size.toFixed(1)}%`;
     stainEl.style.paddingBottom = `${size.toFixed(1)}%`; // keeps it circular
@@ -407,12 +445,31 @@ function handleFullscreenChange(): void {
 
 function handleVisibility(): void {
   if (document.hidden) {
-    dailySecondsStore.setValue(dailySeconds);
+    flushDelta();
   }
 }
 
 function persistNow(): void {
-  dailySecondsStore.setValue(dailySeconds);
+  flushDelta();
+}
+
+/**
+ * Flush this tab's unsaved delta to the shared storage.
+ *
+ * Read-modify-write: reads the current stored total, adds only
+ * the seconds this tab accumulated since last flush, and writes
+ * the new total back. This way multiple tabs add their own
+ * seconds without overwriting each other.
+ */
+async function flushDelta(): Promise<void> {
+  if (unsavedDelta <= 0) return;
+  const delta = unsavedDelta;
+  unsavedDelta = 0;
+
+  const stored = await dailySecondsStore.getValue();
+  const newTotal = stored + delta;
+  dailySeconds = newTotal;
+  await dailySecondsStore.setValue(newTotal);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────

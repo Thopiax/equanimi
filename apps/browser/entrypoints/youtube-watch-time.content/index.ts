@@ -68,6 +68,12 @@ export const tunnelMaxStore = signalSetting<number>(
   60 // tunnel is ~95% closed at 60 minutes
 );
 
+export const stainEnabledStore = signalSetting<boolean>(
+  youtubeWatchTime.id,
+  "stain-enabled",
+  true
+);
+
 // Derived at activation; re-derived when settings change.
 const NEAR_MAX = -Math.log(0.05); // ≈ 2.996 — curve reaches 95% at 1× range
 let tunnelMinSeconds = 5 * 60;
@@ -124,6 +130,7 @@ export default defineContentScript({
 // ── State ─────────────────────────────────────────────────────────
 
 let active = false;
+let stainActive = false;
 let dailySeconds = 0;
 let videoPlaying = false;
 let tickInterval: ReturnType<typeof setInterval> | null = null;
@@ -151,6 +158,14 @@ async function activate(): Promise<void> {
   tunnelMaxStore.watch(async (newMax) => {
     deriveTau(await tunnelMinStore.getValue(), newMax);
     updateDisplay();
+  });
+
+  stainEnabledStore.watch((newValue) => {
+    if (newValue) {
+      activateStain();
+    } else {
+      deactivateStain();
+    }
   });
 
   // Load persisted daily total (reset if new calendar day).
@@ -267,7 +282,16 @@ async function createOverlay(): Promise<void> {
   counterEl.dataset.position = position;
   document.body.appendChild(counterEl);
 
-  // Blob lives inside the player so it renders ON TOP of the video.
+  // Stain creation depends on its own toggle.
+  const stainOn = await stainEnabledStore.getValue();
+  if (stainOn) {
+    activateStain();
+  }
+}
+
+function activateStain(): void {
+  if (stainActive || !active) return;
+  stainActive = true;
   randomizeBlobPosition();
   stainEl = document.createElement("div");
   stainEl.className = "equanimi-watch-stain";
@@ -281,6 +305,14 @@ async function createOverlay(): Promise<void> {
     document.body.appendChild(stainEl);
     waitForPlayer();
   }
+  updateDisplay();
+}
+
+function deactivateStain(): void {
+  if (!stainActive) return;
+  stainActive = false;
+  stainEl?.remove();
+  stainEl = null;
 }
 
 /** Poll for the player container if it wasn't available at startup. */
@@ -298,14 +330,13 @@ function waitForPlayer(): void {
 function removeOverlay(): void {
   counterEl?.remove();
   counterEl = null;
-  stainEl?.remove();
-  stainEl = null;
+  deactivateStain();
 }
 
 // ── Timer tick ────────────────────────────────────────────────────
 
 function tick(): void {
-  if (!counterEl || !stainEl) return;
+  if (!counterEl) return;
 
   // Only accumulate when a video is playing on a visible tab.
   if (!document.hidden && videoPlaying) {
@@ -320,7 +351,7 @@ function tick(): void {
 }
 
 function updateDisplay(): void {
-  if (!counterEl || !stainEl) return;
+  if (!counterEl) return;
 
   // ── Counter text ────────────────────────────────────────────
   const hours = Math.floor(dailySeconds / 3600);
@@ -332,31 +363,30 @@ function updateDisplay(): void {
       ? `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
       : `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
-  // ── Continuous interpolation ────────────────────────────────
+  // ── Stain interpolation — only if stain is active ──────────
   const t = stainProgress(dailySeconds);
 
-  if (t <= 0) {
-    // Before min threshold — blob is invisible.
-    stainEl.style.width = "0";
-    stainEl.style.paddingBottom = "0";
-    stainEl.style.opacity = "0";
-  } else {
-    // Growing blob — a dark soft-edged circle.
-    const size = lerp(BLOB_SIZE_MIN, BLOB_SIZE_MAX, t);
-    const alpha = lerp(BLOB_ALPHA_MIN, BLOB_ALPHA_MAX, t);
-    // Soft edge: solid core fades to transparent at the rim
-    const edgeAlpha = alpha * 0.5;
+  if (stainEl) {
+    if (t <= 0) {
+      stainEl.style.width = "0";
+      stainEl.style.paddingBottom = "0";
+      stainEl.style.opacity = "0";
+    } else {
+      const size = lerp(BLOB_SIZE_MIN, BLOB_SIZE_MAX, t);
+      const alpha = lerp(BLOB_ALPHA_MIN, BLOB_ALPHA_MAX, t);
+      const edgeAlpha = alpha * 0.5;
 
-    stainEl.style.width = `${size.toFixed(1)}%`;
-    stainEl.style.paddingBottom = `${size.toFixed(1)}%`; // keeps it circular
-    stainEl.style.opacity = "1";
-    stainEl.style.background = [
-      `radial-gradient(circle,`,
-      `  rgba(0, 0, 0, ${alpha.toFixed(3)}) 0%,`,
-      `  rgba(0, 0, 0, ${alpha.toFixed(3)}) 40%,`,
-      `  rgba(0, 0, 0, ${edgeAlpha.toFixed(3)}) 70%,`,
-      `  transparent 100%)`,
-    ].join(" ");
+      stainEl.style.width = `${size.toFixed(1)}%`;
+      stainEl.style.paddingBottom = `${size.toFixed(1)}%`;
+      stainEl.style.opacity = "1";
+      stainEl.style.background = [
+        `radial-gradient(circle,`,
+        `  rgba(0, 0, 0, ${alpha.toFixed(3)}) 0%,`,
+        `  rgba(0, 0, 0, ${alpha.toFixed(3)}) 40%,`,
+        `  rgba(0, 0, 0, ${edgeAlpha.toFixed(3)}) 70%,`,
+        `  transparent 100%)`,
+      ].join(" ");
+    }
   }
 
   // ── Counter styling — grows with time ─────────────────────

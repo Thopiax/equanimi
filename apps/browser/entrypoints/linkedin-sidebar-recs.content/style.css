@@ -1,0 +1,19 @@
+/*
+ * Equanimi — LinkedIn Sidebar Recommendations Hide (CSS layer)
+ *
+ * Hides "People you may know", "Add to your feed", and similar
+ * recommendation panels in the right sidebar.
+ * Scoped under .equanimi-linkedin-sidebar-recs-active on <html>.
+ */
+
+/* ── Hide the right-rail sidebar modules ─────────────────────── */
+.equanimi-linkedin-sidebar-recs-active aside.scaffold-layout__aside,
+.equanimi-linkedin-sidebar-recs-active .feed-follows-module,
+.equanimi-linkedin-sidebar-recs-active .ad-banner-container {
+  display: none !important;
+}
+
+/* ── Let the main column expand ──────────────────────────────── */
+.equanimi-linkedin-sidebar-recs-active .scaffold-layout__main {
+  max-width: 100% !important;
+}

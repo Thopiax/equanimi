@@ -7,8 +7,6 @@ import { youtubeSponsored } from "./youtube-sponsored/definition";
 import { chessPostGameCooldown } from "./chess-post-game-cooldown/definition";
 import { linkedinFeedHide } from "./linkedin-feed-hide/definition";
 import { linkedinNotificationBadge } from "./linkedin-notification-badge/definition";
-import { linkedinSidebarRecs } from "./linkedin-sidebar-recs/definition";
-import { linkedinAds } from "./linkedin-ads/definition";
 import { linkedinPromotedPosts } from "./linkedin-promoted-posts/definition";
 
 /**
@@ -26,8 +24,6 @@ export const shields: readonly ShieldDefinition[] = [
   chessPostGameCooldown,
   linkedinFeedHide,
   linkedinNotificationBadge,
-  linkedinSidebarRecs,
-  linkedinAds,
   linkedinPromotedPosts,
 ] as const;
 

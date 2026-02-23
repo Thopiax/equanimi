@@ -6,14 +6,7 @@
  */
 
 /* ── Hide the main feed container ────────────────────────────── */
-.equanimi-linkedin-feed-hide-active .scaffold-finite-scroll,
-.equanimi-linkedin-feed-hide-active .feed-shared-update-v2,
-.equanimi-linkedin-feed-hide-active div.scaffold-finite-scroll__content {
-  display: none !important;
-}
-
-/* ── Also hide the sort/filter bar above the feed ────────────── */
-.equanimi-linkedin-feed-hide-active .feed-sort-toggle {
+.equanimi-linkedin-feed-hide-active [data-testid="mainFeed"] {
   display: none !important;
 }
 

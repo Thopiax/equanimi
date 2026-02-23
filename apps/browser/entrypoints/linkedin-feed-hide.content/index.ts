@@ -53,7 +53,7 @@ function injectPlaceholder(): void {
 
   // Find the feed's parent container on the homepage
   const feedParent =
-    document.querySelector(".scaffold-finite-scroll")?.parentElement ??
+    document.querySelector('[data-testid="mainFeed"]')?.parentElement ??
     document.querySelector("main");
   if (!feedParent) {
     return;

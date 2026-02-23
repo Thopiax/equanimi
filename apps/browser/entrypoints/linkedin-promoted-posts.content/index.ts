@@ -1,14 +1,13 @@
 import { shieldEnabled } from "@/utils/storage";
 import { linkedinPromotedPosts } from "@/modules/shields/linkedin-promoted-posts/definition";
-import "./style.css";
 
 /**
  * Content script: LinkedIn Promoted Posts Hide
  *
- * Pure CSS shield — hides sponsored/promoted posts in the feed.
+ * JS-driven shield — finds div[role="listitem"] elements that contain
+ * a <p> whose only text content is "Promoted", and hides them.
  */
 
-const CSS_CLASS = `equanimi-${linkedinPromotedPosts.id}-active`;
 const enabled = shieldEnabled(
   linkedinPromotedPosts.id,
   linkedinPromotedPosts.defaultEnabled,
@@ -19,13 +18,57 @@ export default defineContentScript({
   runAt: "document_idle",
 
   async main() {
-    const isEnabled = await enabled.getValue();
-    toggle(isEnabled);
+    let active = await enabled.getValue();
 
-    enabled.watch((newValue) => toggle(newValue));
+    if (active) {
+      hidePromotedPosts();
+    }
+
+    enabled.watch((newValue) => {
+      active = newValue;
+      if (active) {
+        hidePromotedPosts();
+      } else {
+        showPromotedPosts();
+      }
+    });
+
+    // LinkedIn loads feed items dynamically — observe for new ones.
+    const observer = new MutationObserver(() => {
+      if (active) {
+        hidePromotedPosts();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   },
 });
 
-function toggle(on: boolean): void {
-  document.documentElement.classList.toggle(CSS_CLASS, on);
+const HIDDEN_ATTR = "data-equanimi-promoted-hidden";
+
+function isPromotedItem(listitem: Element): boolean {
+  for (const p of listitem.querySelectorAll("p")) {
+    if (p.textContent?.trim() === "Promoted") {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hidePromotedPosts(): void {
+  for (const item of document.querySelectorAll('div[role="listitem"]')) {
+    if (item.getAttribute(HIDDEN_ATTR) === "true") {
+      continue;
+    }
+    if (isPromotedItem(item)) {
+      (item as HTMLElement).style.display = "none";
+      item.setAttribute(HIDDEN_ATTR, "true");
+    }
+  }
+}
+
+function showPromotedPosts(): void {
+  for (const item of document.querySelectorAll(`[${HIDDEN_ATTR}="true"]`)) {
+    (item as HTMLElement).style.display = "";
+    item.removeAttribute(HIDDEN_ATTR);
+  }
 }

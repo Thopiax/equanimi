@@ -92,7 +92,7 @@ const BLOB_SIZE_MAX = 55; // % of player width at t→∞ (covers most of player
 const BLOB_ALPHA_MIN = 0.5; // core opacity at t≈0
 const BLOB_ALPHA_MAX = 0.96; // core opacity at t→∞
 
-// Random blob position (picked once per page load)
+// Random blob position (re-randomized each time the stain activates)
 let blobX = 50;
 let blobY = 50;
 

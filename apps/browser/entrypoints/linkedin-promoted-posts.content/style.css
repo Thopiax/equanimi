@@ -1,0 +1,22 @@
+/*
+ * Equanimi — LinkedIn Promoted Posts Hide (CSS layer)
+ *
+ * Hides sponsored/promoted posts in the feed.
+ * Scoped under .equanimi-linkedin-promoted-posts-active on <html>.
+ */
+
+/* ── Hide feed items containing "Promoted" label ─────────────── */
+.equanimi-linkedin-promoted-posts-active .feed-shared-update-v2:has(.feed-shared-actor__sub-description a[href*="about/sponsored"]),
+.equanimi-linkedin-promoted-posts-active .feed-shared-update-v2:has(span[aria-label="Promoted"]) {
+  display: none !important;
+}
+
+/* ── Hide promoted items in update components ────────────────── */
+.equanimi-linkedin-promoted-posts-active .update-components-actor:has(a[href*="about/sponsored"]) {
+  display: none !important;
+}
+
+/* ── Collapse the parent wrapper if it's an occluded update ──── */
+.equanimi-linkedin-promoted-posts-active div.feed-shared-update-v2--minimal-padding:has(span[aria-label="Promoted"]) {
+  display: none !important;
+}

@@ -405,9 +405,16 @@ function handleFullscreenChange(): void {
 
 // ── Visibility / persistence ──────────────────────────────────────
 
-function handleVisibility(): void {
+async function handleVisibility(): Promise<void> {
   if (document.hidden) {
     dailySecondsStore.setValue(dailySeconds);
+  } else {
+    // Catch up with time accumulated by other tabs while we were hidden.
+    const stored = await dailySecondsStore.getValue();
+    if (stored > dailySeconds) {
+      dailySeconds = stored;
+      updateDisplay();
+    }
   }
 }
 

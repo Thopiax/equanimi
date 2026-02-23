@@ -84,7 +84,7 @@ function deriveTau(minMin: number, maxMin: number): void {
 const BLOB_SIZE_MIN = 3; // % of player width at t≈0 (tiny dot)
 const BLOB_SIZE_MAX = 55; // % of player width at t→∞ (covers most of player)
 const BLOB_ALPHA_MIN = 0.5; // core opacity at t≈0
-const BLOB_ALPHA_MAX = 0.92; // core opacity at t→∞
+const BLOB_ALPHA_MAX = 0.96; // core opacity at t→∞
 
 // Random blob position (picked once per page load)
 let blobX = 50;

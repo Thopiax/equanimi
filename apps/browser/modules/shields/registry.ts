@@ -5,6 +5,11 @@ import { youtubeSidebarRecs } from "./youtube-sidebar-recs/definition";
 import { youtubeCommentsHide } from "./youtube-comments-hide/definition";
 import { youtubeSponsored } from "./youtube-sponsored/definition";
 import { chessPostGameCooldown } from "./chess-post-game-cooldown/definition";
+import { linkedinFeedHide } from "./linkedin-feed-hide/definition";
+import { linkedinNotificationBadge } from "./linkedin-notification-badge/definition";
+import { linkedinSidebarRecs } from "./linkedin-sidebar-recs/definition";
+import { linkedinAds } from "./linkedin-ads/definition";
+import { linkedinPromotedPosts } from "./linkedin-promoted-posts/definition";
 
 /**
  * Single source of truth for all registered shields.
@@ -19,6 +24,11 @@ export const shields: readonly ShieldDefinition[] = [
   youtubeCommentsHide,
   youtubeSponsored,
   chessPostGameCooldown,
+  linkedinFeedHide,
+  linkedinNotificationBadge,
+  linkedinSidebarRecs,
+  linkedinAds,
+  linkedinPromotedPosts,
 ] as const;
 
 /** Unique domains that have at least one shield. Derived, not hand-maintained. */

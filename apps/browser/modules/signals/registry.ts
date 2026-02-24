@@ -1,5 +1,6 @@
 import type { SignalDefinition } from "./types";
 import { youtubeWatchTime } from "./youtube-watch-time/definition";
+import { youtubeStain } from "./youtube-stain/definition";
 
 /**
  * Single source of truth for all registered signals.
@@ -9,4 +10,5 @@ import { youtubeWatchTime } from "./youtube-watch-time/definition";
  */
 export const signals: readonly SignalDefinition[] = [
   youtubeWatchTime,
+  youtubeStain,
 ] as const;

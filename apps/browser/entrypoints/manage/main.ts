@@ -60,22 +60,8 @@ const watchTimePositionStore = signalSetting<WatchTimePosition>(
   "bottom-right"
 );
 
-const tunnelMinStore = signalSetting<number>(
-  "youtube-watch-time",
-  "tunnel-min-minutes",
-  5
-);
-const tunnelMaxStore = signalSetting<number>(
-  "youtube-watch-time",
-  "tunnel-max-minutes",
-  60
-);
-
-const stainEnabledStore = signalSetting<boolean>(
-  "youtube-watch-time",
-  "stain-enabled",
-  true
-);
+const tunnelMinStore = signalSetting<number>("youtube-stain", "tunnel-min-minutes", 5);
+const tunnelMaxStore = signalSetting<number>("youtube-stain", "tunnel-max-minutes", 60);
 
 const POSITIONS: { value: WatchTimePosition; label: string }[] = [
   { value: "top-left", label: "\u2196" },
@@ -287,41 +273,16 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
     row.appendChild(toggle.label);
     body.appendChild(row);
 
-    // ── Settings panel for watch time (nested under toggle) ────
     if (intervention.id === "youtube-watch-time") {
       const settingsPanel = document.createElement("div");
       settingsPanel.className = "settings-panel";
 
       const store = intervention.getStore();
-      store
-        .getValue()
-        .then((v) => settingsPanel.classList.toggle("hidden", !v));
+      store.getValue().then((v) => settingsPanel.classList.toggle("hidden", !v));
       toggle.input.addEventListener("change", () => {
         settingsPanel.classList.toggle("hidden", !toggle.input.checked);
       });
       store.watch((v) => settingsPanel.classList.toggle("hidden", !v));
-
-      // ── Stain toggle ──────────────────────────────────────────
-      const stainRow = document.createElement("div");
-      stainRow.className = "settings-row";
-
-      const stainLabel = document.createElement("span");
-      stainLabel.className = "settings-label";
-      stainLabel.textContent = "Dark stain overlay";
-
-      const stainToggle = createToggle("stain-enabled");
-      const currentStain = await stainEnabledStore.getValue();
-      stainToggle.input.checked = currentStain;
-      stainToggle.input.addEventListener("change", async () => {
-        await stainEnabledStore.setValue(stainToggle.input.checked);
-      });
-      stainEnabledStore.watch((v) => {
-        stainToggle.input.checked = v;
-      });
-
-      stainRow.appendChild(stainLabel);
-      stainRow.appendChild(stainToggle.label);
-      settingsPanel.appendChild(stainRow);
 
       // ── Position picker ───────────────────────────────────────
       const posRow = document.createElement("div");
@@ -343,9 +304,7 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
         btn.title = pos.value;
         btn.addEventListener("click", async () => {
           await watchTimePositionStore.setValue(pos.value);
-          posGroup
-            .querySelectorAll(".pos-btn")
-            .forEach((b) => b.classList.remove("active"));
+          posGroup.querySelectorAll(".pos-btn").forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
         });
         posGroup.appendChild(btn);
@@ -354,6 +313,20 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
       posRow.appendChild(posLabel);
       posRow.appendChild(posGroup);
       settingsPanel.appendChild(posRow);
+      body.appendChild(settingsPanel);
+    }
+
+    // ── Settings panel for stain (nested under toggle) ────
+    if (intervention.id === "youtube-stain") {
+      const settingsPanel = document.createElement("div");
+      settingsPanel.className = "settings-panel";
+
+      const store = intervention.getStore();
+      store.getValue().then((v) => settingsPanel.classList.toggle("hidden", !v));
+      toggle.input.addEventListener("change", () => {
+        settingsPanel.classList.toggle("hidden", !toggle.input.checked);
+      });
+      store.watch((v) => settingsPanel.classList.toggle("hidden", !v));
 
       // ── Tunnel time range ─────────────────────────────────────
       const timeRow = document.createElement("div");
@@ -369,15 +342,15 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
       const currentMin = await tunnelMinStore.getValue();
       const currentMax = await tunnelMaxStore.getValue();
 
-      const minInput = createNumberInput("starts-at", "Starts at", currentMin);
-      const maxInput = createNumberInput("full-at", "Full at", currentMax);
+      const minInput = createNumberInput("stain-starts-at", "Starts at", currentMin);
+      const maxInput = createNumberInput("stain-full-at", "Full at", currentMax);
 
       minInput.input.addEventListener(
         "input",
         debounce(async () => {
           const val = Math.max(0, parseInt(minInput.input.value, 10) || 0);
           await tunnelMinStore.setValue(val);
-        }, 400)
+        }, 400),
       );
 
       maxInput.input.addEventListener(
@@ -385,7 +358,7 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
         debounce(async () => {
           const val = Math.max(1, parseInt(maxInput.input.value, 10) || 1);
           await tunnelMaxStore.setValue(val);
-        }, 400)
+        }, 400),
       );
 
       timeGroup.appendChild(minInput.wrapper);
@@ -393,7 +366,6 @@ async function renderDomainGroup(group: DomainGroup): Promise<HTMLElement> {
       timeRow.appendChild(timeLabel);
       timeRow.appendChild(timeGroup);
       settingsPanel.appendChild(timeRow);
-
       body.appendChild(settingsPanel);
     }
 

@@ -49,7 +49,7 @@ const COOLDOWN_OPTIONS = [
 ];
 
 /** Domains that support cooldown. */
-const COOLDOWN_DOMAINS = ["chess.com", "youtube.com"];
+const COOLDOWN_DOMAINS = ["chess.com", "youtube.com", "linkedin.com"];
 
 // ── Group interventions by domain ─────────────────────────────────
 

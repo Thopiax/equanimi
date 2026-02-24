@@ -1,0 +1,6 @@
+/*
+ * Equanimi — LinkedIn Promoted Posts Hide
+ *
+ * Hiding is handled via JS (MutationObserver) since CSS :has()
+ * cannot match on text content alone.
+ */

@@ -209,9 +209,9 @@ function updateStain(): void {
   stainEl.style.background = [
     `radial-gradient(circle,`,
     `  rgba(0, 0, 0, ${alpha.toFixed(3)}) 0%,`,
-    `  rgba(0, 0, 0, ${(alpha * 0.95).toFixed(3)}) 25%,`,
-    `  rgba(0, 0, 0, ${(alpha * 0.85).toFixed(3)}) 50%,`,
-    `  rgba(0, 0, 0, ${(alpha * 0.75).toFixed(3)}) 75%,`,
+    `  rgba(0, 0, 0, ${(alpha * 0.975).toFixed(3)}) 25%,`,
+    `  rgba(0, 0, 0, ${(alpha * 0.95).toFixed(3)}) 50%,`,
+    `  rgba(0, 0, 0, ${(alpha * 0.925).toFixed(3)}) 75%,`,
     `  transparent 100%)`,
   ].join(" ");
 }

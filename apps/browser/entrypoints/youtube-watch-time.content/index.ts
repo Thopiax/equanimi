@@ -21,7 +21,7 @@ import "./style.css";
 const CSS_CLASS = `equanimi-${youtubeWatchTime.id}-active`;
 const enabled = signalEnabled(
   youtubeWatchTime.id,
-  youtubeWatchTime.defaultEnabled
+  youtubeWatchTime.defaultEnabled,
 );
 
 export type WatchTimePosition =
@@ -33,19 +33,19 @@ export type WatchTimePosition =
 const positionStore = signalSetting<WatchTimePosition>(
   youtubeWatchTime.id,
   "position",
-  "bottom-right"
+  "bottom-right",
 );
 
 // ── Persisted daily accumulator ───────────────────────────────────
 const dailySecondsStore = signalSetting<number>(
   youtubeWatchTime.id,
   "daily-seconds",
-  0
+  0,
 );
 const dailyDateStore = signalSetting<string>(
   youtubeWatchTime.id,
   "daily-date",
-  ""
+  "",
 );
 
 // ── Configurable tunnel time range ───────────────────────────────
@@ -60,18 +60,18 @@ const dailyDateStore = signalSetting<string>(
 export const tunnelMinStore = signalSetting<number>(
   youtubeWatchTime.id,
   "tunnel-min-minutes",
-  5 // tunnel starts at 5 minutes of watch time
+  5, // tunnel starts at 5 minutes of watch time
 );
 export const tunnelMaxStore = signalSetting<number>(
   youtubeWatchTime.id,
   "tunnel-max-minutes",
-  60 // tunnel is ~95% closed at 60 minutes
+  60, // tunnel is ~95% closed at 60 minutes
 );
 
 export const stainEnabledStore = signalSetting<boolean>(
   youtubeWatchTime.id,
   "stain-enabled",
-  true
+  true,
 );
 
 // Derived at activation; re-derived when settings change.
@@ -88,9 +88,9 @@ function deriveTau(minMin: number, maxMin: number): void {
 
 // Blob: a dark circle that grows over the video
 const BLOB_SIZE_MIN = 3; // % of player width at t≈0 (tiny dot)
-const BLOB_SIZE_MAX = 55; // % of player width at t→∞ (covers most of player)
-const BLOB_ALPHA_MIN = 0.5; // core opacity at t≈0
-const BLOB_ALPHA_MAX = 0.96; // core opacity at t→∞
+const BLOB_SIZE_MAX = 70; // % of player width at t→∞ (covers most of player)
+const BLOB_ALPHA_MIN = 0.6; // core opacity at t≈0
+const BLOB_ALPHA_MAX = 0.99; // core opacity at t→∞
 
 // Random blob position (re-randomized each time the stain activates)
 let blobX = 50;
@@ -250,7 +250,7 @@ function attachVideoListeners(video: HTMLVideoElement): void {
   const updateState = () => {
     // Any <video> on the page playing → count time.
     videoPlaying = Array.from(document.querySelectorAll("video")).some(
-      (v) => !v.paused && !v.ended
+      (v) => !v.paused && !v.ended,
     );
   };
 

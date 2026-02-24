@@ -1,16 +1,6 @@
 /*
- * Equanimi — LinkedIn Feed Hide (CSS layer)
+ * Equanimi — LinkedIn Feed Hide
  *
- * Hides the main feed on the LinkedIn homepage.
- * Scoped under .equanimi-linkedin-feed-hide-active on <html>.
+ * Hiding is handled via JS (MutationObserver) for reliable
+ * targeting of LinkedIn's dynamically rendered feed.
  */
-
-/* ── Hide the main feed container ────────────────────────────── */
-.equanimi-linkedin-feed-hide-active [data-testid="mainFeed"] {
-  display: none !important;
-}
-
-/* ── Hide "Start a post" box to reduce compulsion ────────────── */
-.equanimi-linkedin-feed-hide-active .share-box-feed-entry__closed-share-box {
-  display: none !important;
-}

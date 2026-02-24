@@ -1,61 +1,74 @@
 import { shieldEnabled } from "@/utils/storage";
 import { linkedinFeedHide } from "@/modules/shields/linkedin-feed-hide/definition";
-import "./style.css";
 
 /**
  * Content script: LinkedIn Feed Hide
  *
- * CSS-driven shield with a placeholder message so users know
- * the feed is intentionally hidden, not broken.
+ * JS-driven shield — finds and hides the element with
+ * data-testid="mainFeed", with a placeholder message.
  */
 
-const CSS_CLASS = `equanimi-${linkedinFeedHide.id}-active`;
 const enabled = shieldEnabled(linkedinFeedHide.id, linkedinFeedHide.defaultEnabled);
 const PLACEHOLDER_ID = "equanimi-linkedin-feed-placeholder";
+const HIDDEN_ATTR = "data-equanimi-feed-hidden";
 
 export default defineContentScript({
   matches: ["*://*.linkedin.com/*"],
   runAt: "document_idle",
 
   async main() {
-    const isEnabled = await enabled.getValue();
-    toggle(isEnabled);
+    let active = await enabled.getValue();
 
-    enabled.watch((newValue) => toggle(newValue));
+    if (active) {
+      hideFeed();
+    }
 
-    // LinkedIn is an SPA — watch for navigation to re-inject placeholder.
+    enabled.watch((newValue) => {
+      active = newValue;
+      if (active) {
+        hideFeed();
+      } else {
+        showFeed();
+      }
+    });
+
+    // LinkedIn is an SPA — watch for navigation and dynamic loading.
     const observer = new MutationObserver(() => {
       if (active) {
-        injectPlaceholder();
+        hideFeed();
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   },
 });
 
-let active = false;
-
-function toggle(on: boolean): void {
-  active = on;
-  document.documentElement.classList.toggle(CSS_CLASS, on);
-
-  if (on) {
-    injectPlaceholder();
-  } else {
-    removePlaceholder();
+function hideFeed(): void {
+  const feed = document.querySelector('[data-testid="mainFeed"]');
+  if (!feed || feed.getAttribute(HIDDEN_ATTR) === "true") {
+    return;
   }
+
+  (feed as HTMLElement).style.display = "none";
+  feed.setAttribute(HIDDEN_ATTR, "true");
+  injectPlaceholder(feed);
 }
 
-function injectPlaceholder(): void {
+function showFeed(): void {
+  const feed = document.querySelector(`[${HIDDEN_ATTR}="true"]`);
+  if (feed) {
+    (feed as HTMLElement).style.display = "";
+    feed.removeAttribute(HIDDEN_ATTR);
+  }
+  removePlaceholder();
+}
+
+function injectPlaceholder(feed: Element): void {
   if (document.getElementById(PLACEHOLDER_ID)) {
     return;
   }
 
-  // Find the feed's parent container on the homepage
-  const feedParent =
-    document.querySelector('[data-testid="mainFeed"]')?.parentElement ??
-    document.querySelector("main");
-  if (!feedParent) {
+  const parent = feed.parentElement;
+  if (!parent) {
     return;
   }
 
@@ -73,7 +86,7 @@ function injectPlaceholder(): void {
     margin: 16px 0;
   `;
 
-  feedParent.prepend(placeholder);
+  parent.insertBefore(placeholder, feed);
 }
 
 function removePlaceholder(): void {

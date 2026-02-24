@@ -41,15 +41,31 @@ All content scripts match `*://*.linkedin.com/*`.
 
 ## CSS selectors
 
-These selectors target LinkedIn's current DOM. They will need monitoring as LinkedIn updates.
+These selectors target LinkedIn's current DOM (as of Feb 2026). They will need monitoring as LinkedIn updates.
 
-- **Feed**: `div.feed-shared-update-v2` parent container, or the main feed `<div>` within `role="main"`
-- **Notification badge**: `.notification-badge`, `.notification-badge__count`
-- **Sidebar recs**: `.feed-follows-module`, `aside` panels with recommendation content
-- **Ads**: `[data-ad-banner]`, sidebar ad containers
-- **Promoted posts**: posts containing "Promoted" label span
+**Feed** (`.equanimi-linkedin-feed-hide-active`):
+- `.scaffold-finite-scroll`, `.feed-shared-update-v2`, `div.scaffold-finite-scroll__content` — main feed
+- `.feed-sort-toggle` — sort/filter bar above feed
+- `.share-box-feed-entry__closed-share-box` — "Start a post" box
 
-Exact selectors to be verified during implementation by inspecting LinkedIn's live DOM.
+**Notification badge** (`.equanimi-linkedin-notification-badge-active`):
+- `.notification-badge__count`, `.notification-badge`, `.nav-item__badge-count`, `span[class*="notification-badge"]` — nav badges
+- `.msg-overlay-bubble-header__badge`, `.messaging-count-badge` — messaging badges
+
+**Sidebar recs** (`.equanimi-linkedin-sidebar-recs-active`):
+- `aside.scaffold-layout__aside`, `.feed-follows-module`, `.ad-banner-container` — sidebar modules
+- `.scaffold-layout__main { max-width: 100% }` — expand main column when sidebar hidden
+
+**Ads** (`.equanimi-linkedin-ads-active`):
+- `.ad-banner-container`, `[data-ad-banner]`, `.ads-container` — ad units
+- `.scaffold-layout__aside .artdeco-card:has([data-ad-banner])`, `.right-rail-ad` — right-rail ads
+- `.premium-upsell-card`, `.artdeco-card:has(.premium-upsell)` — premium upsell cards
+
+**Promoted posts** (`.equanimi-linkedin-promoted-posts-active`):
+- `.feed-shared-update-v2:has(.feed-shared-actor__sub-description a[href*="about/sponsored"])` — sponsored link
+- `.feed-shared-update-v2:has(span[aria-label="Promoted"])` — promoted label
+- `.update-components-actor:has(a[href*="about/sponsored"])` — update component actors
+- `div.feed-shared-update-v2--minimal-padding:has(span[aria-label="Promoted"])` — minimal-padding wrappers
 
 ## Approach
 

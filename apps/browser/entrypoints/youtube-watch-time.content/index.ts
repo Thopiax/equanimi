@@ -46,6 +46,30 @@ const dailyDateStore = signalSetting<string>(
 
 const SAVE_INTERVAL = 10;
 
+// ── Counter intensity curve ───────────────────────────────────────
+//
+// The counter grows in size, opacity, and weight as watch time
+// accumulates. Uses the same asymptotic curve as the stain:
+// invisible growth before 5 min, ~95% intensity at 60 min.
+
+const COUNTER_MIN_SECONDS = 5 * 60;
+const COUNTER_MAX_SECONDS = 60 * 60;
+const NEAR_MAX = -Math.log(0.05); // ≈ 2.996
+const COUNTER_TAU = (COUNTER_MAX_SECONDS - COUNTER_MIN_SECONDS) / NEAR_MAX;
+
+const COUNTER_FONT_MIN = 13;
+const COUNTER_FONT_MAX = 18;
+
+function timeProgress(seconds: number): number {
+  if (seconds < COUNTER_MIN_SECONDS) return 0;
+  const elapsed = seconds - COUNTER_MIN_SECONDS;
+  return 1 - Math.exp(-elapsed / COUNTER_TAU);
+}
+
+function lerp(min: number, max: number, t: number): number {
+  return min + (max - min) * t;
+}
+
 export default defineContentScript({
   matches: ["*://*.youtube.com/*"],
   runAt: "document_idle",
@@ -212,6 +236,7 @@ function tick(): void {
 function updateDisplay(): void {
   if (!counterEl) return;
 
+  // ── Counter text ────────────────────────────────────────────
   const hours = Math.floor(dailySeconds / 3600);
   const minutes = Math.floor((dailySeconds % 3600) / 60);
   const seconds = dailySeconds % 60;
@@ -220,6 +245,19 @@ function updateDisplay(): void {
     hours > 0
       ? `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
       : `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+  // ── Counter styling — grows with time ─────────────────────
+  const t = timeProgress(dailySeconds);
+  const fontSize = lerp(COUNTER_FONT_MIN, COUNTER_FONT_MAX, t);
+  const textAlpha = lerp(0.55, 1.0, t);
+  const bgAlpha = lerp(0.3, 0.55, t);
+
+  counterEl.style.fontSize = `${fontSize.toFixed(1)}px`;
+  counterEl.style.color = `rgba(255, 255, 255, ${textAlpha.toFixed(2)})`;
+  counterEl.style.background = `rgba(0, 0, 0, ${bgAlpha.toFixed(2)})`;
+  counterEl.style.padding = "6px 12px";
+  counterEl.style.borderRadius = "8px";
+  counterEl.style.fontWeight = t > 0.5 ? "600" : "400";
 }
 
 // ── Fullscreen support ────────────────────────────────────────────
